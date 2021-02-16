@@ -12,6 +12,7 @@ class Lista extends StatefulWidget {
 class _ListaState extends State<Lista> {
   bool buscando = false;
   String dropdownTema = 'Sistema';
+  String filtroArtigos = '';
 
   final scrollController = ScrollController();
 
@@ -25,13 +26,41 @@ class _ListaState extends State<Lista> {
             icon: Icon(Icons.filter_list),
             itemBuilder: (BuildContext context) {
               return [
-                const PopupMenuItem(
-                  value: 123,
-                  child: Text('Working a lot harder'),
+                PopupMenuItem(
+                  child: GestureDetector(
+                    child: Text('Data'),
+                    onTap: () {
+                      setState(() {
+                        filtroArtigos = 'date';
+                      });
+                      buscarDados();
+                      Navigator.pop(context);
+                    },
+                  ),
                 ),
-                const PopupMenuItem(
-                  value: 456,
-                  child: Text('teste 123213'),
+                PopupMenuItem(
+                  child: GestureDetector(
+                    child: Text('Título'),
+                    onTap: () {
+                      setState(() {
+                        filtroArtigos = 'title';
+                      });
+                      buscarDados();
+                      Navigator.pop(context);
+                    },
+                  ),
+                ),
+                PopupMenuItem(
+                  child: GestureDetector(
+                    child: Text('Autor'),
+                    onTap: () {
+                      setState(() {
+                        filtroArtigos = 'authors';
+                      });
+                      buscarDados();
+                      Navigator.pop(context);
+                    },
+                  ),
                 ),
               ];
             },
@@ -116,18 +145,11 @@ class _ListaState extends State<Lista> {
                       ),
                       leading: Padding(
                         padding: EdgeInsets.only(left: 1.0, right: 8.0),
-                        child: Image.network(
-                          carregado.imageUrl,
-                          loadingBuilder: (BuildContext context, Widget child, ImageChunkEvent loadingProgress) {
-                            if (loadingProgress == null) return child;
-                            return Center(
-                              child: CircularProgressIndicator(
-                                value: loadingProgress.expectedTotalBytes != null
-                                    ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes
-                                    : null,
-                              ),
-                            );
-                          },
+                        child: CachedNetworkImage(
+                          imageUrl: carregado.imageUrl,
+                          progressIndicatorBuilder: (context, url, downloadProgress) =>
+                              CircularProgressIndicator(value: downloadProgress.progress),
+                          errorWidget: (context, url, error) => Icon(Icons.error),
                         ),
                       ),
                       title: Text(
@@ -217,7 +239,7 @@ class _ListaState extends State<Lista> {
   void buscarDados() async {
     try {
       loading(true);
-      await App.api.buscarArtigos();
+      await App.api.buscarArtigos(filtro: filtroArtigos);
       loading(false);
     } catch (e) {
       loading(false);

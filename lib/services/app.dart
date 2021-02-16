@@ -25,8 +25,7 @@ class App {
     api.buscarArtigos();
   }
 
-  static Future navigate(Widget widget,
-      {bool slide = false, bool menu = false}) async {
+  static Future navigate(Widget widget, {bool slide = false, bool menu = false}) async {
     if (menu) {
       Dialogs.close();
     }
