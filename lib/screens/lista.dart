@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:cheesecake/index.dart';
@@ -10,14 +9,25 @@ class Lista extends StatefulWidget {
 }
 
 class _ListaState extends State<Lista> {
-  bool buscando = false;
-  String dropdownTema = 'Sistema';
+  bool buscando = true;
+
+  String dropdownTema = 'Sistema'; //Por padrão, o tema seguirá o estabelecido nas configurações do sistema
   String filtroArtigos = '';
 
   final scrollController = ScrollController();
 
   @override
+  void initState() {
+    super.initState();
+    App.api.buscarArtigos().then((value) => setState(() {
+          loading(false);
+        }));
+  }
+
+  @override
   Widget build(BuildContext context) {
+    List artigosLidos = App.cache.getStringList('artigosLidos'); //Carrega os artigos lidos do cache
+
     return Scaffold(
       appBar: AppBar(
         title: Text('Cheesecake News'),
@@ -25,6 +35,7 @@ class _ListaState extends State<Lista> {
           PopupMenuButton(
             icon: Icon(Icons.filter_list),
             itemBuilder: (BuildContext context) {
+              //Seleciona o filtro e salva na variável enviada para a chamada da API
               return [
                 PopupMenuItem(
                   child: GestureDetector(
@@ -33,6 +44,7 @@ class _ListaState extends State<Lista> {
                       setState(() {
                         filtroArtigos = 'date';
                       });
+
                       buscarDados();
                       Navigator.pop(context);
                     },
@@ -45,6 +57,7 @@ class _ListaState extends State<Lista> {
                       setState(() {
                         filtroArtigos = 'title';
                       });
+
                       buscarDados();
                       Navigator.pop(context);
                     },
@@ -57,6 +70,7 @@ class _ListaState extends State<Lista> {
                       setState(() {
                         filtroArtigos = 'authors';
                       });
+
                       buscarDados();
                       Navigator.pop(context);
                     },
@@ -84,7 +98,7 @@ class _ListaState extends State<Lista> {
                     ),
                     onTap: () async {
                       await Dialogs.showDialogTema();
-                      setState(() {});
+                      setState(() {}); //Recarrega a tela para aplicar o novo tema
                     },
                   ),
                   ListTile(
@@ -92,11 +106,7 @@ class _ListaState extends State<Lista> {
                     title: Text('Cheesecake Labs'),
                     leading: Container(
                       height: double.infinity,
-                      padding: EdgeInsets.symmetric(horizontal: 2.0),
-                      child: Image.asset(
-                        'assets/logo.png',
-                        width: 21.0,
-                      ),
+                      child: Icon(Icons.science_outlined),
                     ),
                     onTap: () => Dialogs.showCheesecakeAboutDialog(context),
                   ),
@@ -104,12 +114,6 @@ class _ListaState extends State<Lista> {
               ),
             ),
           ],
-        ),
-      ),
-      bottomNavigationBar: Padding(
-        padding: EdgeInsets.all(14.0),
-        child: SafeArea(
-          child: buildBuscar(),
         ),
       ),
       body: GestureDetector(
@@ -122,7 +126,7 @@ class _ListaState extends State<Lista> {
           child: Scrollbar(
             child: ListView.separated(
               controller: scrollController,
-              itemCount: buscando ? 1 : App.artigos.length,
+              itemCount: buscando ? 1 : App.artigos.length, //Evita repetição do Widget CircularProgressIndicator
               separatorBuilder: (context, index) {
                 return Divider(
                   height: 1,
@@ -130,7 +134,8 @@ class _ListaState extends State<Lista> {
                 );
               },
               itemBuilder: (context, index) {
-                DadosArtigo carregado = App.artigos[index];
+                DadosArtigo carregado = App.artigos[index]; //Dados caregados pela API
+
                 if (buscando)
                   return Padding(
                     padding: EdgeInsets.all(MediaQuery.of(context).size.width / 10),
@@ -139,37 +144,47 @@ class _ListaState extends State<Lista> {
                 else
                   return Container(
                     child: ListTile(
+                      isThreeLine: true,
                       contentPadding: EdgeInsets.symmetric(
                         vertical: 4.0,
                         horizontal: 10.0,
                       ),
-                      leading: Padding(
-                        padding: EdgeInsets.only(left: 1.0, right: 8.0),
-                        child: CachedNetworkImage(
-                          imageUrl: carregado.imageUrl,
-                          progressIndicatorBuilder: (context, url, downloadProgress) =>
-                              CircularProgressIndicator(value: downloadProgress.progress),
-                          errorWidget: (context, url, error) => Icon(Icons.error),
-                        ),
+                      leading: CachedNetworkImage(
+                        imageUrl: carregado.imageUrl,
+                        progressIndicatorBuilder: (context, url, downloadProgress) =>
+                            CircularProgressIndicator(value: downloadProgress.progress),
+                        errorWidget: (context, url, error) => Icon(Icons.error),
                       ),
                       title: Text(
                         carregado.title,
+                        maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 14.0,
-                          fontWeight: FontWeight.w400,
+                        style: !artigosLidos.contains(carregado.tags[0]['id'].toString())
+                            ? Theme.of(context).textTheme.subtitle2
+                            : Theme.of(context).textTheme.bodyText2,
+                      ),
+                      subtitle: Padding(
+                        padding: EdgeInsets.only(top: 12.0),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Flexible(
+                              child: Text(
+                                carregado.authors,
+                                overflow: TextOverflow.ellipsis,
+                                style: Theme.of(context).textTheme.caption,
+                              ),
+                            ),
+                            Text(
+                              carregado.date,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context).textTheme.caption,
+                            ),
+                          ],
                         ),
                       ),
-                      subtitle: Text(
-                        carregado.authors,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 12,
-                        ),
-                      ),
-                      onTap: () {
-                        Dialogs.showLoadingDialog();
-                      },
+                      onTap: () async => Dialogs.showArticleDialog(context, carregado, artigosLidos,
+                          this), //O state do widget pai é passado ao widget filho para que o mesmo possa recarregar o state do pai quando for selecionada a opção de marcar como lido/não lido
                     ),
                   );
               },
@@ -178,56 +193,6 @@ class _ListaState extends State<Lista> {
         ),
       ),
     );
-  }
-
-  Widget buildBuscar() {
-    if (Platform.isAndroid) {
-      return RaisedButton(
-        child: Builder(
-          builder: (context) {
-            if (buscando) {
-              return Container(
-                height: 16,
-                width: 16,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2.5,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                ),
-              );
-            }
-            return Text(
-              'Buscar Novamente',
-              style: TextStyle(
-                color: Colors.white,
-              ),
-            );
-          },
-        ),
-        color: Theme.of(context).primaryColor,
-        disabledColor: Color(0xFF004097),
-        onPressed: !buscando ? buscarDados : null,
-      );
-    } else {
-      return CupertinoButton(
-        color: Theme.of(context).primaryColor,
-        disabledColor: Color(0xFF004097),
-        pressedOpacity: 0.8,
-        child: Builder(
-          builder: (context) {
-            if (buscando) {
-              return CupertinoActivityIndicator();
-            }
-            return Text(
-              'Calcular',
-              style: TextStyle(
-                color: Colors.white,
-              ),
-            );
-          },
-        ),
-        onPressed: !buscando ? buscarDados : null,
-      );
-    }
   }
 
   void loading(bool show) {

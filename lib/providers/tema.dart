@@ -21,7 +21,8 @@ class Tema with ChangeNotifier {
           _isSystem = true;
       }
     } else {
-      App.cache.setString('temaAtual', 'Sistema');
+      App.cache
+          .setString('temaAtual', 'Sistema'); //Por padrão, o tema seguirá o estabelecido nas configurações do sistema
     }
   }
 

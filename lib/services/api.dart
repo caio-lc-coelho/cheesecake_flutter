@@ -23,7 +23,8 @@ class Api {
           artigos.sort((a, b) => a.authors.compareTo(b.authors));
           break;
       }
-      App.artigos = artigos;
+
+      return App.artigos = artigos;
     } else if (response.statusCode == 400 || response.statusCode == 401 || response.statusCode == 403) {
       throw json.decode(response.body);
     }

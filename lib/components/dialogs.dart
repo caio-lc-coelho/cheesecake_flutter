@@ -1,16 +1,13 @@
 import 'package:cheesecake/index.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 bool _isOpenDialog = false;
 
 class Dialogs {
   static void close() {
-    Navigator.of(App.context, rootNavigator: true).pop();
-  }
-
-  static bool isOpen() {
-    return _isOpenDialog;
+    Navigator.of(App.context, rootNavigator: true).pop(); //Função que fecha o Dialog sem necessidade do context atual
   }
 
   static Future<Null> showErrorDialog(String message, {String title}) {
@@ -40,29 +37,6 @@ class Dialogs {
         ],
       ),
     );
-  }
-
-  static void showLoadingDialog() async {
-    _isOpenDialog = true;
-
-    await showDialog(
-      context: App.context,
-      barrierDismissible: false,
-      builder: (BuildContext context) => Dialog(
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: EdgeInsets.all(20.0),
-              child: CircularProgressIndicator(),
-            ),
-            Text('Aguarde...'),
-          ],
-        ),
-      ),
-    );
-
-    _isOpenDialog = false;
   }
 
   static Future<Null> showDialogTema() {
@@ -109,11 +83,104 @@ class Dialogs {
               leading: Icon(Icons.nights_stay),
               onTap: () {
                 App.tema.setTheme(temaEscuro: true);
-                Navigator.pop(context);
+                Dialogs.close();
               },
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  static void showArticleDialog(BuildContext context, DadosArtigo artigo, List artigosLidos, State parent) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) => AlertDialog(
+        content: SingleChildScrollView(
+          child: ListBody(
+            children: <Widget>[
+              Expanded(
+                child: CachedNetworkImage(
+                  imageUrl: artigo.imageUrl,
+                  progressIndicatorBuilder: (context, url, downloadProgress) =>
+                      CircularProgressIndicator(value: downloadProgress.progress),
+                  errorWidget: (context, url, error) => Icon(Icons.error),
+                ),
+              ),
+              Expanded(
+                child: ListBody(
+                  children: <Widget>[
+                    Text(
+                      artigo.website,
+                      style: Theme.of(context).textTheme.headline6,
+                      overflow: TextOverflow.visible,
+                    ),
+                    Text(
+                      artigo.authors,
+                      style: Theme.of(context).textTheme.bodyText2,
+                      overflow: TextOverflow.visible,
+                    ),
+                    Container(height: 5.0),
+                    Text(
+                      artigo.date,
+                      style: Theme.of(context).textTheme.caption,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    Text(
+                      'id: ' + artigo.tags[0]['id'].toString(),
+                      style: Theme.of(context).textTheme.overline,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    Text(
+                      'tag: ' + artigo.tags[0]['label'],
+                      style: Theme.of(context).textTheme.overline,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+              Divider(thickness: 2),
+              Padding(
+                padding: EdgeInsets.only(top: 15.0),
+                child: RichText(
+                  text: TextSpan(
+                    children: <TextSpan>[
+                      TextSpan(
+                        style: Theme.of(context).textTheme.bodyText2,
+                        text: artigo.title,
+                      ),
+                      TextSpan(
+                        style: Theme.of(context).textTheme.caption,
+                        text: '\n\n' + artigo.content,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: <Widget>[
+          FlatButton(
+              child: Text(
+                  artigosLidos.contains(artigo.tags[0]['id'].toString()) ? 'Marcar como não lido' : 'Marcar como lido'),
+              onPressed: () {
+                if (artigosLidos.contains(artigo.tags[0]['id'].toString())) {
+                  artigosLidos.remove(artigo.tags[0]['id'].toString());
+                } else {
+                  artigosLidos.add(artigo.tags[0]['id'].toString());
+                }
+                App.cache.setStringList('artigosLidos', artigosLidos);
+                App.api.buscarArtigos();
+                Dialogs.close();
+                parent.setState(
+                    () {}); //O state do widget pai é passado ao widget filho para que o mesmo possa recarregar o state do pai quando for selecionada a opção de marcar como lido/não lido
+              }),
+          FlatButton(
+            child: Text('Fechar'),
+            onPressed: () => Dialogs.close(),
+          ),
+        ],
       ),
     );
   }
@@ -133,7 +200,7 @@ class Dialogs {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: <Widget>[
                       Image.asset(
-                        'assets/logo.png',
+                        'assets/logo.png', //Peguei do facebook XD
                         width: 75.0,
                         height: 75.0,
                       ),
@@ -143,7 +210,7 @@ class Dialogs {
                           child: ListBody(
                             children: <Widget>[
                               Text('Cheesecake Labs', style: Theme.of(context).textTheme.headline6),
-                              Text('App Teste Caio', style: Theme.of(context).textTheme.bodyText2),
+                              Text('App Challenge Caio', style: Theme.of(context).textTheme.bodyText2),
                               Container(height: 5.0),
                               Text('www.cheesecakelabs.com', style: Theme.of(context).textTheme.caption),
                             ],

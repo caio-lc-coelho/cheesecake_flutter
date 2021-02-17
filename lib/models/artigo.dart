@@ -30,14 +30,14 @@ class DadosArtigo {
   }
 
   factory DadosArtigo.fromJson(Map<String, dynamic> json) {
-      return DadosArtigo(
-        title: json['title'],
-        website: json['website'],
-        authors: json['authors'],
-        date: json['date'],
-        content: json['content'],
-        tags: json['tags'],
-        imageUrl: json['image_url'],
-      );
+    return DadosArtigo(
+      title: json['title'],
+      website: json['website'],
+      authors: json['authors'],
+      date: json['date'],
+      content: json['content'],
+      tags: json['tags'],
+      imageUrl: json['image_url'],
+    );
   }
 }

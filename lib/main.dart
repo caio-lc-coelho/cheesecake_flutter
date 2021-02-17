@@ -7,6 +7,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   SystemChrome.setPreferredOrientations([
+    //Trava o app sempre na vertical
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
@@ -27,7 +28,15 @@ class _MyAppState extends State<MyApp> {
     App.tema.addListener(() {
       setState(() {});
     });
-    App.api.buscarArtigos();
+
+    if (!App.cache.containsKey('temaAtual'))
+      App.cache
+          .setString('temaAtual', 'Sistema'); //Por padrão, o tema seguirá o estabelecido nas configurações do sistema
+
+    if (!App.cache.containsKey('artigosLidos'))
+      App.cache.setStringList('artigosLidos',
+          []); //Criada a lista de artigos lidos, mesmo que vazia, para não ter problemas no carregamentos de telas que dependem dessa variável em cache
+
     super.initState();
   }
 
@@ -39,13 +48,10 @@ class _MyAppState extends State<MyApp> {
       debugShowCheckedModeBanner: false,
       home: Lista(),
       themeMode: App.tema.currentTheme(),
-      theme: ThemeData(),
-      darkTheme: ThemeData(
-        brightness: Brightness.dark,
-        toggleableActiveColor: Colors.lightBlueAccent[200],
-        accentColor: Colors.lightBlueAccent[200],
-        textSelectionTheme: TextSelectionThemeData(selectionHandleColor: Colors.lightBlueAccent[400]),
+      theme: ThemeData(
+        primaryColor: Color(0xFF673AB7), //Cor roxa, primária
       ),
+      darkTheme: ThemeData(brightness: Brightness.dark),
       localizationsDelegates: [
         GlobalWidgetsLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,
